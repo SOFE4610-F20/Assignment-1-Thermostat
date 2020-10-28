@@ -6,6 +6,9 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class App {
 
@@ -20,13 +23,13 @@ public class App {
 
         final MqttConnectOptions options = new MqttConnectOptions();
         options.setAutomaticReconnect(true);
-        options.setCleanSession(true);
         options.setConnectionTimeout(10);
         mqttClient.connect(options);
 
         final Thermostat thermostat = new Thermostat(mqttClient);
+        mqttClient.subscribe("home/thermostat/setpoint", thermostat);
 
-        // subscribe the thermostat to setpoint topic
-        // publish temperature readings every second
+        final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
+        executorService.scheduleAtFixedRate(thermostat::publishTemperature, 0, 1, TimeUnit.SECONDS);
     }
 }
